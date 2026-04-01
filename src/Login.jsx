@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { login } from './api';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
@@ -12,15 +11,20 @@ export default function Login({ onLogin }) {
     setError('');
     setLoading(true);
     try {
-      const data = await login(email, password);
-      if (data.accessToken || data.token) {
-        localStorage.setItem('token', data.accessToken || data.token);
+      const res = await fetch('https://student-management-system-backend.up.railway.app/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (data.accessToken) {
+        localStorage.setItem('token', data.accessToken);
         onLogin();
       } else {
         setError(data.message || 'Invalid credentials. Please try again.');
       }
-    } catch {
-      setError('Network error. Please try again.');
+    } catch (err) {
+      setError('Network error: ' + err.message);
     } finally {
       setLoading(false);
     }
