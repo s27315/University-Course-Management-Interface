@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 
-const EMPTY = { title: '', code: '', description: '', credits: '', instructor: '' };
+const EMPTY = { courseName: '', description: '' };
 
 export default function CourseModal({ mode, course, onSave, onClose }) {
   const [form, setForm] = useState(EMPTY);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (course) setForm({ ...EMPTY, ...course });
+    if (course) setForm({ courseName: course.courseName || '', description: course.description || '' });
     else setForm(EMPTY);
   }, [course]);
 
@@ -16,7 +16,7 @@ export default function CourseModal({ mode, course, onSave, onClose }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await onSave({ ...form, credits: Number(form.credits) });
+    await onSave(form);
     setLoading(false);
   };
 
@@ -32,30 +32,32 @@ export default function CourseModal({ mode, course, onSave, onClose }) {
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
         <form onSubmit={handleSubmit} className="modal-body">
-          <div className="form-row">
-            <div className="form-group">
-              <label>Course Title</label>
-              <input name="title" value={form.title} onChange={handleChange} disabled={isView} required />
-            </div>
-            <div className="form-group">
-              <label>Course Code</label>
-              <input name="code" value={form.code} onChange={handleChange} disabled={isView} required />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Instructor</label>
-              <input name="instructor" value={form.instructor} onChange={handleChange} disabled={isView} />
-            </div>
-            <div className="form-group">
-              <label>Credits</label>
-              <input name="credits" type="number" min="1" max="10" value={form.credits} onChange={handleChange} disabled={isView} />
-            </div>
+          <div className="form-group">
+            <label>Course Name</label>
+            <input name="courseName" value={form.courseName} onChange={handleChange} disabled={isView} required placeholder="e.g. Advanced Mathematics" />
           </div>
           <div className="form-group">
             <label>Description</label>
-            <textarea name="description" value={form.description} onChange={handleChange} disabled={isView} rows={3} />
+            <textarea name="description" value={form.description} onChange={handleChange} disabled={isView} rows={4} placeholder="Describe the course content..." />
           </div>
+          {isView && course?.supervisorId && (
+            <div className="form-group">
+              <label>Supervisor ID</label>
+              <input value={course.supervisorId} disabled />
+            </div>
+          )}
+          {isView && course?.createdAt && (
+            <div className="form-row">
+              <div className="form-group">
+                <label>Created</label>
+                <input value={new Date(course.createdAt).toLocaleDateString()} disabled />
+              </div>
+              <div className="form-group">
+                <label>Updated</label>
+                <input value={new Date(course.updatedAt).toLocaleDateString()} disabled />
+              </div>
+            </div>
+          )}
           {!isView && (
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>

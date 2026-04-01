@@ -6,7 +6,7 @@ export default function Dashboard({ onLogout }) {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
-  const [modal, setModal] = useState(null); // { mode: 'create'|'edit'|'view', course: null|{} }
+  const [modal, setModal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [search, setSearch] = useState('');
 
@@ -19,7 +19,8 @@ export default function Dashboard({ onLogout }) {
     setLoading(true);
     try {
       const data = await getCourses();
-      setCourses(Array.isArray(data) ? data : data.courses || data.data || []);
+      // API returns a plain array
+      setCourses(Array.isArray(data) ? data : []);
     } catch {
       showToast('Failed to load courses.', 'error');
     } finally {
@@ -32,6 +33,7 @@ export default function Dashboard({ onLogout }) {
   const handleView = async (id) => {
     try {
       const data = await getCourseById(id);
+      // API returns the course object directly or nested
       setModal({ mode: 'view', course: data.course || data });
     } catch {
       showToast('Failed to load course details.', 'error');
@@ -44,7 +46,7 @@ export default function Dashboard({ onLogout }) {
         await createCourse(form);
         showToast('Course created successfully!');
       } else {
-        await updateCourse(modal.course._id || modal.course.id, form);
+        await updateCourse(modal.course.id, form);
         showToast('Course updated successfully!');
       }
       setModal(null);
@@ -56,7 +58,7 @@ export default function Dashboard({ onLogout }) {
 
   const handleDelete = async () => {
     try {
-      await deleteCourse(deleteTarget._id || deleteTarget.id);
+      await deleteCourse(deleteTarget.id);
       showToast('Course deleted successfully!');
       setDeleteTarget(null);
       fetchCourses();
@@ -66,7 +68,7 @@ export default function Dashboard({ onLogout }) {
   };
 
   const filtered = courses.filter((c) =>
-    [c.title, c.code, c.instructor].some((f) => f?.toLowerCase().includes(search.toLowerCase()))
+    [c.courseName, c.description].some((f) => f?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -98,7 +100,7 @@ export default function Dashboard({ onLogout }) {
         <div className="toolbar">
           <input
             className="search-input"
-            placeholder="Search by title, code or instructor..."
+            placeholder="Search by course name or description..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -117,16 +119,15 @@ export default function Dashboard({ onLogout }) {
         ) : (
           <div className="course-grid">
             {filtered.map((course) => (
-              <div key={course._id || course.id} className="course-card">
+              <div key={course.id} className="course-card">
                 <div className="course-card-header">
-                  <span className="course-code">{course.code || 'N/A'}</span>
-                  <span className="course-credits">{course.credits ? `${course.credits} cr` : ''}</span>
+                  <span className="course-badge">Course</span>
+                  <span className="course-date">{new Date(course.createdAt).toLocaleDateString()}</span>
                 </div>
-                <h3 className="course-title">{course.title}</h3>
-                {course.instructor && <p className="course-instructor">👤 {course.instructor}</p>}
+                <h3 className="course-title">{course.courseName}</h3>
                 {course.description && <p className="course-desc">{course.description}</p>}
                 <div className="course-actions">
-                  <button className="btn btn-sm btn-ghost" onClick={() => handleView(course._id || course.id)}>View</button>
+                  <button className="btn btn-sm btn-ghost" onClick={() => handleView(course.id)}>View</button>
                   <button className="btn btn-sm btn-secondary" onClick={() => setModal({ mode: 'edit', course })}>Edit</button>
                   <button className="btn btn-sm btn-danger" onClick={() => setDeleteTarget(course)}>Delete</button>
                 </div>
@@ -153,7 +154,7 @@ export default function Dashboard({ onLogout }) {
               <button className="modal-close" onClick={() => setDeleteTarget(null)}>✕</button>
             </div>
             <div className="modal-body">
-              <p>Are you sure you want to delete <strong>{deleteTarget.title}</strong>? This action cannot be undone.</p>
+              <p>Are you sure you want to delete <strong>{deleteTarget.courseName}</strong>? This action cannot be undone.</p>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={() => setDeleteTarget(null)}>Cancel</button>
                 <button className="btn btn-danger" onClick={handleDelete}>Delete</button>
